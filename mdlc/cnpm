@@ -1,0 +1,4 @@
+npm --registry=http://registry.npm.taobao.org \
+  --cache=$HOME/.npm/.cache/cnpm \
+  --disturl=http://registry.npm.taobao.org/mirrors/node \
+  --userconfig=$HOME/.cnpmrc  ${@}

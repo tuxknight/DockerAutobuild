@@ -1,0 +1,10 @@
+FROM crond:base
+
+# add script and cron job
+ADD ["crontab","/root/"]
+
+# config cron job
+RUN crontab /root/crontab
+
+# result lives here
+VOLUME /root/result

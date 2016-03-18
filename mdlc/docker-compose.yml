@@ -1,0 +1,11 @@
+---
+# docker-compose.yml
+# docker run -d --name mdlc-node -v "$PWD/mdlc-node":/opt/mdlc-node -p 3000:3000 -p 3001:3001 -p 8000:8000 mdfe:latest
+mdlc_node:
+  image: mdfe
+  ports:
+    - 3000:3000
+    - 3001:3001
+    - 8000:8000
+  volumes:
+    - ./mdlc-node:/opt/mdlc-node

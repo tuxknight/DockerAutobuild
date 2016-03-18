@@ -1,0 +1,2 @@
+docker run --rm -ti -v /root/result:/root/result rlang CMD BATCH /root/result/tengniudata.csv
+

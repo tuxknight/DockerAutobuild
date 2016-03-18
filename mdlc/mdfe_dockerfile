@@ -1,0 +1,14 @@
+FROM nodeenv:latest
+
+# install mdfe
+COPY ./mdfe /opt/mdfe
+WORKDIR /opt/mdfe
+RUN npm install && npm link
+WORKDIR /opt
+
+# launch mdfe serve to serve the code in /opt/mdlc-node
+RUN useradd node -d /opt/mdlc-node
+EXPOSE 3000 3001 8000
+VOLUME /opt/mdlc-node
+COPY ./entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

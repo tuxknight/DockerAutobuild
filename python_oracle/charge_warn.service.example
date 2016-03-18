@@ -1,0 +1,15 @@
+[Unit]
+Description=charge warn
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+EnvironmentFile=/etc/sysconfig/charge-warn
+ExecStartPre=-/usr/bin/docker kill charge-warn
+ExecStartPre=-/usr/bin/docker rm charge-warn
+ExecStartPre=/usr/bin/docker pull rlang
+ExecStart=/usr/bin/docker run --name charge-warn rlang CMD BATCH $INFILE $OUTFILE
+
+[Install]
+WantedBy=multi-user.target

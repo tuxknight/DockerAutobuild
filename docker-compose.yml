@@ -1,0 +1,4 @@
+---
+# docker-compose.yml
+nginx:
+    image: "nginx:${TAG}"

@@ -1,0 +1,73 @@
+FROM debian:wheezy
+
+### install ruby ###
+
+# code from official ruby dockerfile but uses different base image
+# https://github.com/docker-library/ruby/blob/0cdec78d89e33750a4b796bd2c748f0d5a1ae654/2.2/Dockerfile
+ENV RUBY_MAJOR 2.2
+ENV RUBY_VERSION 2.2.3
+ENV RUBY_DOWNLOAD_SHA256 df795f2f99860745a416092a4004b016ccf77e8b82dec956b120f18bdc71edce
+ENV RUBYGEMS_VERSION 2.4.8
+
+# skip installing gem documentation
+RUN echo 'install: --no-document\nupdate: --no-document' >> "$HOME/.gemrc"
+
+# some of ruby's build scripts are written in ruby
+# we purge this later to make sure our final image uses what we just built
+RUN apt-get update \
+	&& apt-get install -y bison libgdbm-dev ruby curl autoconf automake bzip2 file gcc g++ make zlib1g-dev \
+	libcurl4-openssl-dev libssl-dev openssh-client\
+	&& rm -rf /var/lib/apt/lists/* \
+	&& mkdir -p /usr/src/ruby \
+	&& curl -fSL -o ruby.tar.gz "http://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.gz" \
+	&& echo "$RUBY_DOWNLOAD_SHA256 *ruby.tar.gz" | sha256sum -c - \
+	&& tar -xzf ruby.tar.gz -C /usr/src/ruby --strip-components=1 \
+	&& rm ruby.tar.gz \
+	&& cd /usr/src/ruby \
+	&& autoconf \
+	&& ./configure --disable-install-doc \
+	&& make -j"$(nproc)" \
+	&& make install \
+	&& apt-get purge -y --auto-remove bison libgdbm-dev ruby \
+	&& gem update --system $RUBYGEMS_VERSION \
+	&& rm -r /usr/src/ruby
+
+# install things globally, for great justice
+ENV GEM_HOME /usr/local/bundle
+ENV PATH $GEM_HOME/bin:$PATH
+
+ENV BUNDLER_VERSION 1.10.6
+
+RUN gem install bundler --version "$BUNDLER_VERSION" \
+	&& bundle config --global path "$GEM_HOME" \
+	&& bundle config --global bin "$GEM_HOME/bin"
+
+# don't create ".bundle" in all our apps
+ENV BUNDLE_APP_CONFIG $GEM_HOME
+
+### install nodejs ###
+
+# Set Version and Arch
+ENV NODE_VERSION 0.10.32
+ENV NODE_ARCH x64
+WORKDIR /opt
+# download tarball && checksum && unpack && clean
+RUN curl -SLO https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-$NODE_ARCH.tar.gz \
+    && curl -SLO https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt \
+    && grep node-v$NODE_VERSION-linux-$NODE_ARCH.tar.gz SHASUMS256.txt | sha256sum -c - \
+    && tar -xzf node-v$NODE_VERSION-linux-$NODE_ARCH.tar.gz -C /usr/local/ --strip-components=1 \
+    && rm -rf node-v$NODE_VERSION-linux-$NODE_ARCH.tar.gz SHASUMS256.txt
+
+### so sad about the GFW ###
+# cnpm is an alias of npm which set --registry to http://registry.npm.taobao.org
+COPY cnpm /usr/local/bin/cnpm
+# change gem source
+RUN gem sources --remove https://rubygems.org/ \
+    && gem sources -a https://ruby.taobao.org/
+
+# install packages
+RUN cnpm install -g grunt-cli bower \
+    && gem update --system \
+    && gem install compass
+
+CMD ["node"]
